@@ -15,6 +15,7 @@
 #include "buzzer.h"
 #include "status.h"
 
+<<<<<<< HEAD
 #define UPos uint8   // ×ø±êÖµ
 #define SPos int16   // ´¦Àí×ø±ê¼ÆËãÖĞµÄÒç³ö
 #define FPos float   // ¸¡µãĞÍ×ø±êÖµ
@@ -23,11 +24,23 @@
 #define UPix uint8   // »Ò¶ÈÖµÀàĞÍ
 
 #define _SquareDiff float      // ·½²îÊ±Ê¹ÓÃ
+=======
+#define UPos uint8 // ×ø±êÖµ
+#define SPos int16 // ´¦Àí×ø±ê¼ÆËãÖĞµÄÒç³ö
+#define FPos float // ¸¡µãĞÍ×ø±êÖµ
+#define FAng float // ¸¡µãĞÍ½Ç¶ÈÖµ
+#define UDPos uint16 // UPos*UPos£¬×ø±êÊıÁ¿
+#define UPix uint8 // »Ò¶ÈÖµÀàĞÍ
+
+
+#define _SquareDiff float // ·½²îÊ±Ê¹ÓÃ
+>>>>>>> cd004be (init)
 #define _PixelIntergral uint32 // UDPOS*UPIX
 #define _PixelSumInSquare uint16
 
 #define MAXX MT9V03X_W
 #define MAXY MT9V03X_H
+<<<<<<< HEAD
 #define BEGIN_X 40            // É¨ÃèÆğÊ¼ºáÏòÆ«ÒÆ£¨×óÓÒËÑË÷°ë¿í£©£¬²Î¿¼Öµ£º40
 #define BEGIN_Y 180           // ½ü´¦¼ì²âĞĞ£¨¿¿½üÍ¼Ïñµ×²¿£©£¬²Î¿¼Öµ£º180
 #define BEGIN_FAR_Y 60        // Ô¶´¦¼ì²âĞĞ£¨¿¿½üÍ¼ÏñÉÏ·½£©£¬²Î¿¼Öµ£º60
@@ -61,21 +74,64 @@ typedef enum
     TrackLeft,
     TrackRight
 } TrackState;
+=======
+#define BEGIN_X (18)              // É¨ÃèÆğÊ¼×ø±ê£¨ÂÔ´óÓÚ 0 µÄÊı£©
+#define BEGIN_Y (48)              // ½ü´¦Ë®Æ½Ïß×İ×ø±ê
+#define BEGIN_FAR_Y (20)          // Ô¶´¦Ë®Æ½Ïß×İ×ø±ê
+#define HALF_KERNEL (7)           // ×ÔÊÊÓ¦ãĞÖµ°ë¾ØĞÎ´óĞ¡ ²Î¿¼Öµ£º7
+#define TRI_HALF_KERNEL (12)      // Èı½ÇÂË²¨°ë¾í»ıºË´óĞ¡£¬²Î¿¼Öµ£º12
+#define TP_HALF_KERNEL (2)        // ½Çµã²Î¿¼µã·¶Î§Ò»°ë£¬²Î¿¼Öµ£º2
+#define CLIP_VALUE (2)            // ×ÔÊÊÓ¦ãĞÖµclip²ÎÊı
+#define RESAMPLE_DIS (3.0f)       // ÖØ²ÉÑù¼ä¾à£¬²Î¿¼£º3.0
+#define ANG_KERNAL (6)           // ½Ç¶È»ñÈ¡°ë¾í»ıºË£¬²Î¿¼£º6
+#define LOSS_THRES (3)           // ÈÏÎª¶ªÏßÊ±£¬×óÓÒ±ßµã¾à±ß¾àÀë
+#define TRACK_KERNEL (3)         // Ñ°ÕÒµ±Ç°µã·¨ÏàÖµÇ°ºó²Î¿¼µã·¶Î§
+#define TRACK_DIS   (12)         // Â·¿íÒ»°ë£¨ÏñËØ£©
+#define LOW_SAMPLE_ACTIVATE (6)  // Ä³²à¿ÉÓÃµãÊıÉÙÓÚ´ËÊ±£¬¼¤»îÈ±ÉÙ¿ÉÓÃÊı¾İµãÅĞ¶Ï·½·¨
+// V ¶ÔÓ¦Èñ½Ç£¬L ¶ÔÓ¦Ö±½Ç£¬J ¶ÔÓ¦ÇúÏß
+#define ANGV_THRES (20.0f * PI/180.0f)           // Èñ½Ç½Çµã×îĞ¡½Ç¶ÈãĞÖµ£¨»¡¶È£©
+#define ANGL_MIN_THRES (40.0f * PI/180.0f)       // Ö±½Ç½Çµã×îĞ¡½Ç¶ÈãĞÖµ
+#define ANGL_MIN_THRES_LOW_SAMPLE (30.0f * PI/180.0f) // µ±²ÉÑùµã½ÏÉÙÊ±£¬ÊÊµ±¼õÉÙãĞÖµ
+#define ANGL_MAX_THRES (120.0f * PI/180.0f)      // Ö±½Ç½Çµã×î´ó½Ç¶ÈãĞÖµ
+#define CURVE_THRES (0.15f)          // ÇúÂÊãĞÖµ£¨¾­ÑéÖµ£©
+#define BW_JUMP_THRES (18)           // °ßÂíÏßºÚ°×Ìø±äÊıÁ¿ãĞÖµ
+#define BW_Y (55)                    // ¼ì²é°ßÂíÏß×İ×ø±ê
+#define BW_Y2 (70)                   // ¼ì²é°ßÂíÏß×İ×ø±ê2
+
+#define KERNEL_SIZE (((HALF_KERNEL)*2+1)*((HALF_KERNEL)*2+1))
+#define XMAX MAXX       // ·ÀÖ¹Ğ´´í£¬¿ÉÒÔÓëMAXX»ìÓÃ£¬²»ÍÆ¼öÊ¹ÓÃ£¨
+#define YMAX MAXY       // ·ÀÖ¹Ğ´´í£¬¿ÉÒÔÓëMAXY»ìÓÃ£¬²»ÍÆ¼öÊ¹ÓÃ£¨
+
+// Ã¶¾ÙÀàĞÍ£¬µ±Ç°Ñ²×óÏß»¹ÊÇÑ²ÓÒÏß
+typedef enum{
+    TrackLeft,
+    TrackRight
+}TrackState;
+>>>>>>> cd004be (init)
 
 // È«¾Ö±äÁ¿
 extern UPix THRES;                                                  // È«¾Ö´óãĞÖµ
 extern const UPos INV_PLOT[MT9V03X_H][MT9V03X_W][2];                // ·´Í¶Ó°±ä»»´ò±í
 extern UPix outImg[MAXY][MAXX];                                     // Êä³öÍ¼Ïñ
+<<<<<<< HEAD
 extern FPos trackPts[2][MAXX + MAXY];                               // ×óÄ¿±êµãÓëÓÒÄ¿±êµã
 extern TrackState trackState;                                       // µ±Ç°Ñ²Ïß×´Ì¬
 extern UDPos tptsN, lptsN, rptsN;                                   // Ä¿±êÑ²ÏßµãÊı£¬×óÓÒÏßµãÊı
 extern FPos borderLPts[2][MAXX + MAXY], borderRPts[2][MAXX + MAXY]; // ×óÏßÉÏµã×ø±êÓëÓÒÏßÉÏµã×ø±ê
 extern FAng borderLAng[MAXX + MAXY], borderRAng[MAXX + MAXY];       // ×óÏß¸÷´¦ÇúÂÊ£¨½Ç¶È£©ÓëÓÒÏß¸÷´¦ÇúÂÊ£¨½Ç¶È£©
+=======
+extern FPos trackPts[2][MAXX+MAXY];                                 // ×óÄ¿±êµãÓëÓÒÄ¿±êµã
+extern TrackState trackState;                                       // µ±Ç°Ñ²Ïß×´Ì¬
+extern UDPos tptsN,lptsN,rptsN;                                     // Ä¿±êÑ²ÏßµãÊı£¬×óÓÒÏßµãÊı
+extern FPos borderLPts[2][MAXX+MAXY],borderRPts[2][MAXX+MAXY];      // ×óÏßÉÏµã×ø±êÓëÓÒÏßÉÏµã×ø±ê
+extern FAng borderLAng[MAXX+MAXY],borderRAng[MAXX+MAXY];            // ×óÏß¸÷´¦ÇúÂÊ£¨½Ç¶È£©ÓëÓÒÏß¸÷´¦ÇúÂÊ£¨½Ç¶È£©
+>>>>>>> cd004be (init)
 extern FAng genAngle;                                               // ¾­¹ıÊ®×Ö£¬ÈôÎŞ·¨»ñÈ¡Ô¶·½±ßÏß£¬ÉèÖÃ¹Ì¶¨Æ«²î½Ç¶È
 extern uint8 cameraProcessFlag;                                     // ÉãÏñÍ·Êı¾İÊÇ·ñ´¦ÀíÍê³É£¬·ÅÖÃÆÁÄ»»ò´®¿ÚÏÔÊ¾ÓëÍ¼Ïñ¶ÁÈ¡³åÍ»
 
 // functions
 void initCamera(void);                                              // ³õÊ¼»¯ÉãÏñÍ·Ä£¿é
+<<<<<<< HEAD
 UPix getPixelOrigin(UPos x, UPos y);                                // »ñÈ¡Ô­Í¼ÖĞºá×ø±êÎª x ,×İ×ø±êÎª y µã´¦µÄÏñËØÖµ
 UPix getPixel(UPos x, UPos y);                                      // »ñÈ¡ÄæÍ¸ÊÓ±ä»»ºóÍ¼ÏñÖĞºá×ø±êÎª x ,×İ×ø±êÎª y µã´¦µÄÏñËØÖµ
 UPix getThres(void);                                                // otsu ·¨»ñÈ¡Í¼ÏñãĞÖµ
@@ -91,6 +147,23 @@ void getTrackLine(void);                                            // »ñÈ¡ÒªÑ²µ
 void getTrackLineViaPointAndAngle(FPos angle, FPos x0, FPos y0);    // Í¨¹ı×ø±êÓë½Ç¶ÈÖ±½Ó¹Ì¶¨ÒªÑ²µÄÄ¿±êÏß
 void getTrackMethod(void);                                          // ¸ù¾İĞèÒªÑ¡ÔñºÏÊÊµÄ»ñÈ¡Ä¿±êÏßµÄ·½·¨
 uint8 *genOutput(void);                                             // ²úÉú»æÖÆÁË×óÓÒ±ßÏß¹Ø¼üµãµÄÍ¼Ïñ£¬·µ»ØÍ¼Ïñ
+=======
+UPix getPixelOrigin(UPos x,UPos y);                                 // »ñÈ¡Ô­Í¼ÖĞºá×ø±êÎª x ,×İ×ø±êÎª y µã´¦µÄÏñËØÖµ
+UPix getPixel(UPos x,UPos y);                                       // »ñÈ¡ÄæÍ¸ÊÓ±ä»»ºóÍ¼ÏñÖĞºá×ø±êÎª x ,×İ×ø±êÎª y µã´¦µÄÏñËØÖµ
+UPix getThres(void);                                                // otsu ·¨»ñÈ¡Í¼ÏñãĞÖµ
+UPix updateThres(void);                                             // ¸üĞÂÍ¼ÏñãĞÖµ
+void findBorderLineL(UPos x,UPos y);                                // Ñ°ÕÒ×ó±ßÏß
+void findBorderLineR(UPos x,UPos y);                                // Ñ°ÕÒÓÒ±ßÏß
+void triFiltering(UDPos ptsN,FPos *borderPts);                      // Èı½ÇÂË²¨±ßÏß
+void resamplePoints(FPos *borderPts,UDPos *num);                    // ÖØ²ÉÑù±ßÏßµã
+void getTurningAngles(FPos *borderPts,FAng *borderAng,UDPos num);   // »ñÈ¡±ßÏß¸÷´¦ÇúÂÊ£¨½Ç¶È£©
+inline void findCorner(FAng *angs,UDPos len,uint8 dir);             // Ñ°ÕÒ±ßÏßÉÏ¹Õµã
+void imageProcess(void);                                            // Í¼Ïñ´¦ÀíÖ÷º¯Êı
+void getTrackLine(void);                                            // »ñÈ¡ÒªÑ²µÄÄ¿±êÏß£¨×ó/ÓÒ±ßÏßÆ«ÒÆ£©
+void getTrackLineViaPointAndAngle(FPos angle,FPos x0,FPos y0);      // Í¨¹ı×ø±êÓë½Ç¶ÈÖ±½Ó¹Ì¶¨ÒªÑ²µÄÄ¿±êÏß
+void getTrackMethod(void);                               // ¸ù¾İĞèÒªÑ¡ÔñºÏÊÊµÄ»ñÈ¡Ä¿±êÏßµÄ·½·¨
+uint8* genOutput(void);                                             // ²úÉú»æÖÆÁË×óÓÒ±ßÏß¹Ø¼üµãµÄÍ¼Ïñ£¬·µ»ØÍ¼Ïñ
+>>>>>>> cd004be (init)
 uint8 lGoesOut(void);                                               // ×ó±ßÏßÊÇ·ñÏò×ó²à³¬³öÆÁÄ»
 uint8 rGoesOut(void);                                               // ÓÒ±ßÏßÊÇ·ñÏòÓÒ²à³¬³öÆÁÄ»
 

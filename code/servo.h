@@ -15,14 +15,14 @@
 #define SERVO_MOTOR_PWM (ATOM1_CH1_P33_9) // 定义主板上舵机对应引脚
 #define SERVO_MOTOR_FREQ (50)             // 定义主板上舵机频率  请务必注意范围 50-300
 
-#define SERVO_MID 722      // 舵机中值，需要自行测定！
-#define SERVO_DELTA_MAX 62 // 舵机打角限幅，非常重要！
+#define SERVO_MID (1500)      // 舵机中值（us），示例值，需用测量校准
+#define SERVO_DELTA_MAX (400) // 舵机打角限幅（us），示例值
 #define SERVO_MIN (SERVO_MID - SERVO_DELTA_MAX)
 #define SERVO_MAX (SERVO_MID + SERVO_DELTA_MAX)
 
-#define SERVO_INIT_P 4.0f
-#define SERVO_INIT_I 0.0f
-#define SERVO_INIT_D 0.1f
+#define SERVO_INIT_P (4.0f)
+#define SERVO_INIT_I (0.0f)
+#define SERVO_INIT_D (0.02f)
 
 void initServo(UTimeStamp clock);                 // 初始化舵机
 float updateServo(float input, UTimeStamp clock); // 更新舵机

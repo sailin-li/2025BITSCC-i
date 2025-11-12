@@ -14,13 +14,13 @@
 #include "status.h"
 #include "motor.h"
 
-#define RAMP_THRES (<参数自己调>)         // 判定为上坡道时两侧角度阈值
-#define RAMP_THRES_DOWN (<参数自己调>)    // 判定为下坡道时两侧角度阈值
+#define RAMP_THRES (60)      // 判定为上坡道时路宽阈值（像素），可根据摄像头视角调整
+#define RAMP_THRES_DOWN (60) // 判定为下坡道时路宽阈值（像素）
 
-void getTrackState(void);   // 获取巡线状态
-void updCtrlVal(void);      // 更新控制值
-void updState(void);        // 主要方法，更新状态
+void getTrackState(void); // 获取巡线状态
+void updCtrlVal(void);    // 更新控制值
+void updState(void);      // 主要方法，更新状态
 
-extern FPos aimDis;         // 预瞄点距离
-extern uint16 cirReady;     // 走圆环元素状态
+extern FPos aimDis;     // 预瞄点距离
+extern uint16 cirReady; // 走圆环元素状态
 #endif
