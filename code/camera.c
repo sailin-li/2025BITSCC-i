@@ -1,15 +1,16 @@
 /*
  * camera.c
  *
- *  Created on: 2024年11月5日
+ *  Created on: 2024?11?5?
  *      Author: peril
  */
 // X in range 188
 // Y in range 120
 #include "camera.h"
+#include <math.h>
 uint8 cameraProcessFlag = FALSE;
 FPos tmp1[MAXX + MAXY], tmp2[MAXX + MAXY];
-UPix THRES = 0; // 全局大阈值，小于等于记为0，大于记为1
+UPix THRES = 0; // ??????0?????1
 FPos borderLPts[2][MAXX + MAXY], borderRPts[2][MAXX + MAXY];
 FPos trackPts[2][MAXX + MAXY];
 FAng borderLAng[MAXX + MAXY], borderRAng[MAXX + MAXY];
@@ -23,33 +24,27 @@ void initCamera()
     while (1)
     {
         if (mt9v03x_init())
-            gpio_toggle_level(LED1); // 翻转 LED 引脚输出电平 控制 LED 亮灭 初始化出错这个灯会闪的很慢
+            gpio_toggle_level(LED1); // ?? LED ?????? ?? LED ?? ?????????????
         else
             break;
-        system_delay_ms(100); // 闪灯表示异常
+        system_delay_ms(100); // ??????
     }
     while (!mt9v03x_finish_flag)
-        ; // 等待读取到图像
+        ; // ???????
     THRES = getThres();
-    gpio_set_level(LED1, 0); // 关闭LED1提示摄像头初始化完成
+    gpio_set_level(LED1, 0); // ??LED1??????????
 }
-/*
- *从未逆透视变换图上，获取横坐标为 x ,纵坐标为 y 点处的图像，即获取 y 行第 x 个位置上的像素值
- */
 inline UPix getPixelOrigin(UPos x, UPos y)
-{
+{ // ???????????????? x ,???? y ????????? y ?? x ????????
     return mt9v03x_image[y][x];
 }
-/*
- *从逆透视变换图上，获取横坐标为 x ,纵坐标为 y 点处的图像，即获取 y 行第 x 个位置上的像素值
- */
 inline UPix getPixel(UPos x, UPos y)
-{
+{ // ??????????????? x ,???? y ????????? y ?? x ????????
     UPos u = INV_PLOT[y][x][0], v = INV_PLOT[y][x][1];
     return getPixelOrigin(u, v);
 }
 inline UPix getPixelWithCheck(UPos x, UPos y)
-{ // 带边界检查的 getPixel
+{ // ?????? getPixel
     if (x > 250)
         x = 0;
     else if (x >= MAXX)
@@ -64,7 +59,7 @@ inline UPix getPixelWithCheck(UPos x, UPos y)
 inline uint8 pointIsValid(SPos x, SPos y)
 {
     if (x >= MAXX || x < 0 || y >= MAXY || y < 0)
-        return FALSE; // 本身超范围，直接返回假
+        return FALSE; // ???????????
     if (INV_PLOT[y][x][0] < MAXX - 1 && INV_PLOT[y][x][0] > 0 && INV_PLOT[y][x][1] < MAXY - 1 && INV_PLOT[y][x][1] > 0)
         return TRUE;
     return FALSE;
@@ -73,13 +68,11 @@ inline uint8 rectIsValid(SPos cx, SPos cy, SPos kernel)
 {
     return pointIsValid(cx - kernel, cy - kernel) && pointIsValid(cx + kernel, cy + kernel);
 }
-
-// 大津法获得阈值
 UPix getThres()
 {
-    UDPos HistoGram[256] = {0}; // 灰度分布直方图
-    // 这里你需要使用 ostu 法获取图像二值化阈值
-    // 计算直方图
+    UDPos HistoGram[256] = {0}; // ???????
+    // ??????? ostu ??????????
+    // ?????
     for (UPos y = 0; y < MAXY; y++)
         for (UPos x = 0; x < MAXX; x++)
             HistoGram[getPixelOrigin(x, y)]++;
@@ -119,10 +112,8 @@ static const SPos dirFront[4][2] = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};        //
 static const SPos dirFrontLeft[4][2] = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};  // {x,y}
 static const SPos dirFrontRight[4][2] = {{1, -1}, {1, 1}, {-1, 1}, {-1, -1}}; // {x,y}
 #define clip(x, minn, maxn) ((x) < (minn) ? (minn) : ((x) > (maxn) ? (maxn) : (x)))
-
-// 寻找左边线
 void findBorderLineL(UPos x, UPos y)
-{ // 寻左边
+{ // ???
 #define setNewPoint           \
     borderLPts[0][lptsN] = x; \
     borderLPts[1][lptsN] = y; \
@@ -133,47 +124,48 @@ void findBorderLineL(UPos x, UPos y)
     setNewPoint;
     while (lptsN < MAXX + MAXY && turn < 4 && pointIsValid(x + 3, y) && pointIsValid(x - 3, y - 3))
     {
-        // 迷宫法巡线
-        // 左侧优先：先检索左上、上、右上、左、右、左下、下、右下
-        const SPos leftOrder[8][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}};
-        uint8 found = FALSE;
-        for (int k = 0; k < 8; k++)
+        // ?????????
+        // ?????????????????????????
+        UPix localTh = THRES;
+        // ??????????????????
+        int found = 0;
+        for (int dx = 0; dx <= TRACK_KERNEL; dx++)
         {
-            SPos nx = (SPos)x + leftOrder[k][0];
-            SPos ny = (SPos)y + leftOrder[k][1];
-            if (!pointIsValid(nx, ny))
-                continue;
-            if (getPixel((UPos)nx, (UPos)ny) <= THRES)
+            int nx = (int)x - dx;
+            if (nx >= 0 && getPixelWithCheck(nx, y) <= localTh)
             {
-                x = (UPos)nx;
-                y = (UPos)ny;
-                setNewPoint;
-                found = TRUE;
-                turn = 0;
+                x = nx;
+                found = 1;
                 break;
             }
         }
         if (!found)
         {
-            // 没找到合适的黑点，尝试向下搜索一小段距离作为容错
-            if (pointIsValid(x, y + 1) && getPixel(x, y + 1) <= THRES)
+            for (int dx = 1; dx <= TRACK_KERNEL; dx++)
             {
-                y = y + 1;
-                setNewPoint;
-                turn = 0;
-            }
-            else
-            {
-                turn++;
+                int nx = (int)x + dx;
+                if (nx < MAXX && getPixelWithCheck(nx, y) <= localTh)
+                {
+                    x = nx;
+                    found = 1;
+                    break;
+                }
             }
         }
+        // ?????????
+        if (found)
+        {
+            setNewPoint;
+            y = y > 0 ? y - 1 : 0;
+        }
+        else
+            break;
     }
 #undef UDir
 #undef setNewPoint
 }
-// 寻找右边线
 void findBorderLineR(UPos x, UPos y)
-{ // 寻右边
+{ // ???
 #define setNewPoint           \
     borderRPts[0][rptsN] = x; \
     borderRPts[1][rptsN] = y; \
@@ -184,188 +176,175 @@ void findBorderLineR(UPos x, UPos y)
     setNewPoint;
     while (rptsN < MAXX + MAXY && turn < 4 && pointIsValid(x + 3, y) && pointIsValid(x - 3, y - 3))
     {
-        // 迷宫法巡线
-        // 右侧优先：先检索右上、上、左上、右、左、右下、下、左下
-        const SPos rightOrder[8][2] = {{1, -1}, {0, -1}, {-1, -1}, {1, 0}, {-1, 0}, {1, 1}, {0, 1}, {-1, 1}};
-        uint8 found = FALSE;
-        for (int k = 0; k < 8; k++)
+        // ?????????
+        UPix localTh = THRES;
+        int found = 0;
+        for (int dx = 0; dx <= TRACK_KERNEL; dx++)
         {
-            SPos nx = (SPos)x + rightOrder[k][0];
-            SPos ny = (SPos)y + rightOrder[k][1];
-            if (!pointIsValid(nx, ny))
-                continue;
-            if (getPixel((UPos)nx, (UPos)ny) <= THRES)
+            int nx = (int)x + dx;
+            if (nx < MAXX && getPixelWithCheck(nx, y) <= localTh)
             {
-                x = (UPos)nx;
-                y = (UPos)ny;
-                setNewPoint;
-                found = TRUE;
-                turn = 0;
+                x = nx;
+                found = 1;
                 break;
             }
         }
         if (!found)
         {
-            if (pointIsValid(x, y + 1) && getPixel(x, y + 1) <= THRES)
+            for (int dx = 1; dx <= TRACK_KERNEL; dx++)
             {
-                y = y + 1;
-                setNewPoint;
-                turn = 0;
-            }
-            else
-            {
-                turn++;
+                int nx = (int)x - dx;
+                if (nx >= 0 && getPixelWithCheck(nx, y) <= localTh)
+                {
+                    x = nx;
+                    found = 1;
+                    break;
+                }
             }
         }
+        if (found)
+        {
+            setNewPoint;
+            y = y > 0 ? y - 1 : 0;
+        }
+        else
+            break;
     }
 #undef UDir
 #undef setNewPoint
 }
-// 三角滤波边线
 void triFiltering(UDPos ptsN, FPos *borderPts)
-{ // 对巡线点三角滤波
-    // 可以用 TRI_HALF_KERNEL 定义半卷积核大小
-    if (ptsN == 0)
+{ // ????????
+    // ??? TRI_HALF_KERNEL ????????
+    if (ptsN < 3)
         return;
-    int K = TRI_HALF_KERNEL;
-    if (K <= 0)
-        K = 1;
+    int k = TRI_HALF_KERNEL;
+    FPos tmp[MAXX + MAXY];
     for (UDPos i = 0; i < ptsN; i++)
     {
-        double sum = 0.0;
-        double wsum = 0.0;
-        int from = (int)i - K;
-        int to = (int)i + K;
-        if (from < 0)
-            from = 0;
-        if (to > (int)ptsN - 1)
-            to = (int)ptsN - 1;
-        for (int j = from; j <= to; j++)
+        double num = 0, den = 0;
+        for (int j = -k; j <= k; j++)
         {
-            double w = (double)(K + 1 - abs((int)j - (int)i));
-            sum += borderPts[j] * w;
-            wsum += w;
+            int idx = i + j;
+            if (idx < 0)
+                idx = 0;
+            if (idx >= (int)ptsN)
+                idx = ptsN - 1;
+            double w = (k + 1) - fabs((double)j);
+            num += borderPts[idx] * w;
+            den += w;
         }
-        tmp1[i] = (FPos)(wsum > 0 ? sum / wsum : borderPts[i]);
+        tmp[i] = (FPos)(num / den);
     }
     for (UDPos i = 0; i < ptsN; i++)
-        borderPts[i] = tmp1[i];
+        borderPts[i] = tmp[i];
 }
-// 重采样边线点
 void resamplePoints(FPos *borderPts, UDPos *num)
-{ // 在折线上根据 RESAMPLE_DIS 等距重采样
-    // 假设数据按行存放：x 在 borderPts[0..], y 在 borderPts + (MAXX+MAXY)
-    if (*num < 2)
+{ // ?????? RESAMPLE_DIS ?????
+    // ???????????????????? borderLPts[1] ? borderRPts[1]
+    FPos *borderY = NULL;
+    if (borderPts == borderLPts[0])
+        borderY = borderLPts[1];
+    else if (borderPts == borderRPts[0])
+        borderY = borderRPts[1];
+    else
+        return; // ???
+    UDPos n = *num;
+    if (n < 2)
         return;
-    FPos *x = borderPts;
-    FPos *y = borderPts + (MAXX + MAXY);
-    FPos newx[MAXX + MAXY];
-    FPos newy[MAXX + MAXY];
-    UDPos newN = 0;
-    double acc = 0.0;
-    // 保留第一个点
-    newx[newN] = x[0];
-    newy[newN] = y[0];
-    newN++;
-    for (UDPos i = 1; i < *num; i++)
+    // ??????
+    double lens[MAXX + MAXY];
+    lens[0] = 0;
+    for (UDPos i = 1; i < n; i++)
     {
-        double dx = x[i] - x[i - 1];
-        double dy = y[i] - y[i - 1];
-        double seg = sqrt(dx * dx + dy * dy);
-        acc += seg;
-        if (acc >= RESAMPLE_DIS)
-        {
-            // 在 i-1 到 i 之间插值
-            double need = acc - RESAMPLE_DIS;
-            double ratio = (seg - need) / seg;
-            if (ratio < 0)
-                ratio = 0;
-            if (ratio > 1)
-                ratio = 1;
-            newx[newN] = x[i - 1] + (FPos)(dx * ratio);
-            newy[newN] = y[i - 1] + (FPos)(dy * ratio);
-            newN++;
-            acc = need;
-        }
-        if (newN >= MAXX + MAXY - 1)
-            break;
+        double dx = borderPts[i] - borderPts[i - 1];
+        double dy = borderY[i] - borderY[i - 1];
+        lens[i] = lens[i - 1] + sqrt(dx * dx + dy * dy);
     }
-    // 若仅保留一个点则补最后
-    if (newN == 1 && *num > 1)
-    {
-        newx[newN] = x[*num - 1];
-        newy[newN] = y[*num - 1];
-        newN++;
-    }
-    // 拷贝回去
+    double total = lens[n - 1];
+    UDPos newN = (UDPos)fmax(2, (int)(total / RESAMPLE_DIS));
+    FPos newX[MAXX + MAXY], newY[MAXX + MAXY];
     for (UDPos i = 0; i < newN; i++)
     {
-        x[i] = newx[i];
-        y[i] = newy[i];
+        double d = (double)i * total / (newN - 1);
+        // find segment
+        UDPos idx = 0;
+        while (idx < n - 1 && lens[idx + 1] < d)
+            idx++;
+        double segLen = lens[idx + 1] - lens[idx];
+        double t = segLen > 1e-6 ? (d - lens[idx]) / segLen : 0;
+        newX[i] = borderPts[idx] + (borderPts[idx + 1] - borderPts[idx]) * t;
+        newY[i] = borderY[idx] + (borderY[idx + 1] - borderY[idx]) * t;
+    }
+    // ??
+    for (UDPos i = 0; i < newN; i++)
+    {
+        borderPts[i] = newX[i];
+        borderY[i] = newY[i];
     }
     *num = newN;
 }
-// 获取边线各处曲率（角度）
 void getTurningAngles(FPos *borderPts, FAng *borderAng, UDPos num)
-{ // 获得转角
-    if (num == 0)
+{ // ????
+    if (num < 3)
+    {
+        for (UDPos i = 0; i < num; i++)
+            borderAng[i] = 0;
         return;
-    FPos *x = borderPts;
-    FPos *y = borderPts + (MAXX + MAXY);
+    }
+    int k = ANG_KERNAL;
     for (UDPos i = 0; i < num; i++)
     {
-        if (i == 0)
+        int i1 = i - k;
+        if (i1 < 0)
+            i1 = 0;
+        int i2 = i + k;
+        if (i2 >= (int)num)
+            i2 = num - 1;
+        double dx = borderPts[i2] - borderPts[i1];
+        double dy = 0; // ?? dy ???? array ???????here we only have x array?)
+        // In this project, borderPts for angle is x array and corresponding y array is borderLPts[1] or borderRPts[1]
+        FPos *borderY = NULL;
+        if (borderPts == borderLPts[0])
+            borderY = borderLPts[1];
+        else if (borderPts == borderRPts[0])
+            borderY = borderRPts[1];
+        if (borderY)
         {
-            double dx = x[1] - x[0];
-            double dy = y[1] - y[0];
-            borderAng[0] = (FAng)atan2(dy, dx);
+            dy = borderY[i2] - borderY[i1];
         }
-        else if (i == num - 1)
-        {
-            double dx = x[num - 1] - x[num - 2];
-            double dy = y[num - 1] - y[num - 2];
-            borderAng[num - 1] = (FAng)atan2(dy, dx);
-        }
-        else
-        {
-            double dx = x[i + 1] - x[i - 1];
-            double dy = y[i + 1] - y[i - 1];
-            borderAng[i] = (FAng)atan2(dy, dx);
-        }
+        borderAng[i] = atan2((FAng)dy, (FAng)dx);
     }
 }
-// 寻找边线上拐点
 inline void findCorner(FAng *borderAng, UDPos num, uint8 dir)
 {
-    // 寻找角点
+    // ????
     uint8 LFound = FALSE, VFound = FALSE, isCurve = FALSE;
-    // 遍历所有点，判断角点类型
-    for (UDPos i = 1; i + 1 < num; i++)
+    // ????????????
+    for (UDPos i = 1; i < num - 1; i++)
     {
-        double a0 = borderAng[i - 1];
-        double a1 = borderAng[i];
-        double a2 = borderAng[i + 1];
-        double da1 = fabs(a1 - a0);
-        double da2 = fabs(a2 - a1);
-        if (da1 > PI)
-            da1 = 2 * PI - da1;
-        if (da2 > PI)
-            da2 = 2 * PI - da2;
-        VFound = (da1 > ANGV_THRES || da2 > ANGV_THRES);
-        LFound = ((da1 > ANGL_MIN_THRES && da1 < ANGL_MAX_THRES) || (da2 > ANGL_MIN_THRES && da2 < ANGL_MAX_THRES));
-        isCurve = (da1 > CURVE_THRES || da2 > CURVE_THRES);
-        if (VFound || LFound || isCurve)
-        {
-            rstInflectPoint(VFound, LFound, isCurve, dir);
-        }
+        FAng da = borderAng[i + 1] - borderAng[i - 1];
+        // ???? -PI,PI
+        while (da > M_PI)
+            da -= 2 * M_PI;
+        while (da < -M_PI)
+            da += 2 * M_PI;
+        FAng ang = fabs(da);
+        if (ang > ANGV_THRES)
+            VFound = TRUE;
+        else if (ang > ANGL_MIN_THRES && ang < ANGL_MAX_THRES)
+            LFound = TRUE;
+        if (fabs(borderAng[i + 1] - borderAng[i]) > CURVE_THRES)
+            isCurve = TRUE;
     }
+    // ??????
+    rstInflectPoint(VFound, LFound, isCurve, dir);
 }
-// 图像处理主函数
 void imageProcess()
 {
     //    while(cameraProcessFlag==TRUE);
     //    cameraProcessFlag=TRUE;
-    // 从近处左右寻黑白跳变点
+    // ???????????
     UPos xl = MAXX / 2 - BEGIN_X, xr = MAXX / 2 + BEGIN_X, y0 = BEGIN_Y;
     for (; xl > 0; xl--)
         if (getPixel(xl, y0) <= THRES)
@@ -384,13 +363,13 @@ void imageProcess()
     }
     switch (lostStatus)
     {
-    case 1: // 左边丢失
+    case 1: // ????
         trackState = TrackRight;
         break;
-    case 2: // 右边丢失
+    case 2: // ????
         trackState = TrackLeft;
         break;
-    case 3: // 左右丢失
+    case 3: // ????
         if (curState == GoCross)
         {
             curState = GoCrossMid;
@@ -400,7 +379,7 @@ void imageProcess()
         break;
     }
     if (curState == GoCrossMid || (curState == GoCross && genAngle > 1e-8))
-    { // 巡远线
+    { // ???
         int xMid;
         y0 = BEGIN_FAR_Y;
         if (curState == GoCross && (genAngle < 3 * PI / 5 && genAngle > 2 * PI / 5))
@@ -445,21 +424,21 @@ void imageProcess()
             return;
         }
     }
-    // 迷宫法自适应寻边线
+    // ?????????
     findBorderLineL(xl + 2, y0);
     findBorderLineR(xr - 2, y0);
-    // 三角滤波1
+    // ????1
     triFiltering(lptsN, borderLPts[0]);
     triFiltering(lptsN, borderLPts[1]);
     triFiltering(rptsN, borderRPts[0]);
     triFiltering(rptsN, borderRPts[1]);
-    // 边线等距采样
+    // ??????
     resamplePoints(borderLPts[0], &lptsN);
     resamplePoints(borderRPts[0], &rptsN);
-    // 边线获取转角
+    // ??????
     getTurningAngles(borderLPts[0], borderLAng, lptsN);
     getTurningAngles(borderRPts[0], borderRAng, rptsN);
-    // 检查角点并写入
+    // ???????
     clearInflectPoint();
     findCorner(borderLAng, lptsN, 0);
     findCorner(borderRAng, rptsN, 1);
@@ -469,111 +448,95 @@ void imageProcess()
         if (lptsN < 3 && rptsN < 3)
             curState = GoCrossMid;
     }
-    // 检查斑马线（横向跳变计数）
+    // ?????
+    // ??????????????????
+    BWCount = 0;
+    for (UPos x = 1; x < MAXX; x++)
     {
-        int bwcount = 0;
-        for (int xi = 0; xi < MAXX - 1; xi++)
-        {
-            UPix p1 = getPixel((UPos)xi, (UPos)BW_Y);
-            UPix p2 = getPixel((UPos)(xi + 1), (UPos)BW_Y);
-            if ((p1 <= THRES && p2 > THRES) || (p1 > THRES && p2 <= THRES))
-                bwcount++;
-        }
-        if (bwcount > BW_JUMP_THRES)
-        {
-            curState = StopCar;
-        }
+        UPix p0 = getPixel(x - 1, BW_Y);
+        UPix p1 = getPixel(x, BW_Y);
+        if ((p0 <= THRES && p1 > THRES) || (p0 > THRES && p1 <= THRES))
+            BWCount++;
+        UPix q0 = getPixel(x - 1, BW_Y2);
+        UPix q1 = getPixel(x, BW_Y2);
+        if ((q0 <= THRES && q1 > THRES) || (q0 > THRES && q1 <= THRES))
+            BWCount++;
+    }
+    if (BWCount > BW_JUMP_THRES)
+    {
+        curState = StopCar;
     }
 }
-// 根据需要选择合适的获取目标线的方法
+
 void getTrackMethod(void)
 {
-    // 简单决策：若处于十字（GoCross）且一侧丢失或点太少，尽量用角度估计巡线；否则用常规方法
-    if (curState == GoCross)
-    {
-        if (lptsN < 4 && rptsN >= 4)
-        {
-            genAngle = borderRAng[0];
-            getTrackLineViaPointAndAngle(genAngle, 0, 0);
-            return;
-        }
-        else if (rptsN < 4 && lptsN >= 4)
-        {
+    // ??????? getTrackLineViaPointAndAngle ???? getTrackLine ????????????
+    if (curState == GoCross && (lptsN < 3 || rptsN < 3))
+    { // ??????????????????
+        if (lptsN > 2 && rptsN > 2)
+            genAngle = (borderLAng[0] + borderRAng[0]) / 2.0f;
+        else if (lptsN > 2)
             genAngle = borderLAng[0];
+        else if (rptsN > 2)
+            genAngle = borderRAng[0];
+        else
+            genAngle = 0;
+        if (fabs(genAngle) > 1e-3)
             getTrackLineViaPointAndAngle(genAngle, 0, 0);
-            return;
-        }
+        else
+            getTrackLine();
     }
-    // 圆弧处理（简单策略：根据方向使用垂直角度偏移）
-    if (curState == GoCircle && (circleState == CircleRunPre))
+    else if (curState == GoCircle && (circleState == CircleRunPre))
     {
         if (circleDir == RightCircle)
-            getTrackLineViaPointAndAngle(-PI / 2, 0, 0);
+            getTrackLineViaPointAndAngle(-PI / 4, 0, 0); // ??????
         else
-            getTrackLineViaPointAndAngle(PI / 2, 0, 0);
-        return;
+            getTrackLineViaPointAndAngle(PI / 4, 0, 0); // ??????
     }
-    // 其他情况采用默认方法
-    getTrackLine();
+    else if (curState == GoCircle && (circleState == CircleOutPre || (circleState == CircleOutFound && ((circleDir == RightCircle && (VId[0] < 10 || (!lptVFound()))) || (circleDir == LeftCircle && (VId[1] < 10 || (!rptVFound())))))))
+    {
+        if (circleDir == RightCircle)
+            getTrackLineViaPointAndAngle(-PI / 6, 0, 0);
+        else
+            getTrackLineViaPointAndAngle(PI / 6, 0, 0);
+    }
+    else
+    {
+        getTrackLine();
+    }
 }
-// 获取要巡的目标线（左/右边线偏移）
 void getTrackLine()
 {
     UDPos num = (trackState == TrackLeft ? lptsN : rptsN);
     FPos *borderPts = trackState == TrackLeft ? borderLPts[0] : borderRPts[0];
     tptsN = num;
-    // 偏移边线到中线去吧
+    // ?????????
     if (num == 0)
     {
         tptsN = 0;
         return;
     }
-    // 如果两条边线都有数据，用中点作为巡线
-    if (lptsN > 2 && rptsN > 2)
+    if (trackState == TrackLeft)
     {
-        UDPos n = (lptsN < rptsN) ? lptsN : rptsN;
-        tptsN = n;
-        for (UDPos i = 0; i < n; i++)
-        {
-            trackPts[0][i] = (borderLPts[0][i] + borderRPts[0][i]) * 0.5f;
-            trackPts[1][i] = (borderLPts[1][i] + borderRPts[1][i]) * 0.5f;
-        }
-        return;
-    }
-    // 否则仅根据一侧边线偏移生成巡线
-    if (trackState == TrackLeft && lptsN > 0)
-    {
-        tptsN = lptsN;
-        for (UDPos i = 0; i < tptsN; i++)
+        for (UDPos i = 0; i < num; i++)
         {
             trackPts[0][i] = borderLPts[0][i] + TRACK_DIS;
             trackPts[1][i] = borderLPts[1][i];
         }
-        return;
     }
-    if (trackState == TrackRight && rptsN > 0)
+    else
     {
-        tptsN = rptsN;
-        for (UDPos i = 0; i < tptsN; i++)
+        for (UDPos i = 0; i < num; i++)
         {
             trackPts[0][i] = borderRPts[0][i] - TRACK_DIS;
             trackPts[1][i] = borderRPts[1][i];
         }
-        return;
-    }
-    // 兜底：如果没有边线，产生一条居中的直线向前
-    tptsN = (MAXX + MAXY) / RESAMPLE_DIS;
-    for (UDPos i = 0; i < tptsN; i++)
-    {
-        trackPts[0][i] = MAXX / 2;
-        trackPts[1][i] = MAXY - i * RESAMPLE_DIS;
     }
 }
-// 通过坐标与角度直接固定要巡的目标线
 void getTrackLineViaPointAndAngle(FPos angle, FPos x0, FPos y0)
-{ // angle 弧度输入， .__为0; ! 为 pi/2 ; __. 为pi
+{ // angle ????? .__?0; ! ? pi/2 ; __. ?pi
     if (x0 < 1e-10 || y0 < 1e-10)
-    { // x0,y0置0时，自动获取巡线起点
+    { // x0,y0?0??????????
         if ((trackState == TrackLeft || (lostStatus & 2) != 0) && (lostStatus & 1) == 0)
         {
             x0 = borderLPts[0][0] + TRACK_DIS;
@@ -597,9 +560,8 @@ void getTrackLineViaPointAndAngle(FPos angle, FPos x0, FPos y0)
         trackPts[1][i] = y0 - i * sin(angle) * RESAMPLE_DIS;
     }
 }
-// 产生绘制了左右边线关键点的图像，返回图像
 uint8 *genOutput()
-{ // 调试的时候，可以用它生成一幅标记左右点的图像
+{ // ??????????????????????
     //    while(cameraProcessFlag==TRUE);
     //    cameraProcessFlag=TRUE;
     for (UPos y = 0; y < MAXY; y++)
@@ -640,9 +602,8 @@ uint8 *genOutput()
     cameraProcessFlag = FALSE;
     return (uint8 *)outImg;
 }
-// 左边线是否向左侧超出屏幕
 uint8 lGoesOut()
-{ // 判断左侧线走着走着就出界了
+{ // ?????????????
     if ((lostStatus & 1) != 0)
         return TRUE;
     if (INV_PLOT[(int)borderLPts[1][lptsN - 1]][(int)borderLPts[0][lptsN - 1]][0] < 3)
@@ -651,18 +612,17 @@ uint8 lGoesOut()
         return TRUE;
     return FALSE;
 }
-// 右边线是否向右侧超出屏幕
 uint8 rGoesOut()
-{ // 同理
+{ // ??
     if ((lostStatus & 2) != 0)
         return TRUE;
-    if (INV_PLOT[(int)borderRPts[1][rptsN - 1]][(int)borderRPts[0][rptsN - 1]][0] > MAXX - 3)
+    if (INV_PLOT[(int)borderRPts[1][rptsN - 1]][(int)borderRPts[0][rptsN - 1]][0] > MAXX - 4)
         return TRUE;
     if (borderRPts[0][rptsN - 1] >= 3.0 * MAXX / 4)
         return TRUE;
     return FALSE;
 }
-// 逆透视变换表，之后会补全
+// ????????????
 const UPos INV_PLOT[MT9V03X_H][MT9V03X_W][2] = {
     {
         {25, 22},
