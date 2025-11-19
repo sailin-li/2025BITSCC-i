@@ -1,0 +1,33 @@
+/*
+ * servo.h
+ *
+ *  Created on: 2024年10月27日
+ *      Author: peril
+ * Function: 舵机控制
+ */
+
+#include "zf_common_headfile.h"
+#include "pid.h"
+
+#ifndef CODE_SERVO_H_
+#define CODE_SERVO_H_
+
+#define SERVO_MOTOR_PWM             (ATOM1_CH1_P33_9)                           // 定义主板上舵机对应引脚
+#define SERVO_MOTOR_FREQ            (50 )                                       // 定义主板上舵机频率  请务必注意范围 50-300
+
+#define SERVO_MID (<参数自己调>)            # 舵机中值，需要自行测定！
+#define SERVO_DELTA_MAX (<参数自己调>)      # 舵机打角限幅，非常重要！
+#define SERVO_MIN (SERVO_MID - SERVO_DELTA_MAX)
+#define SERVO_MAX (SERVO_MID + SERVO_DELTA_MAX)
+
+#define SERVO_INIT_P (<参数自己调>)
+#define SERVO_INIT_I (<参数自己调>)
+#define SERVO_INIT_D (<参数自己调>)
+
+void initServo(UTimeStamp clock);                                       // 初始化舵机
+float updateServo(float input,UTimeStamp clock);                        // 更新舵机 
+void setTargetA(float newAngle);                                        // 设置舵机目标角度
+
+extern PIDObject servoPID;
+
+#endif /* CODE_SERVO_H_ */

@@ -1,0 +1,10 @@
+/Debug/
+/Release/
+/.settings/
+/.cproject
+/.project
+/libraries/
+/*.txt
+/*.bat
+/*.lsl
+/.vscode/
