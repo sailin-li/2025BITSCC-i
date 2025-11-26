@@ -28,28 +28,28 @@
 
 #define MAXX MT9V03X_W
 #define MAXY MT9V03X_H
-#define BEGIN_X (10)            // 扫描起始坐标（略大于 0 的数）
-#define BEGIN_Y (48)            // 近处水平线纵坐标
-#define BEGIN_FAR_Y (110)       // 远处水平线纵坐标
-#define HALF_KERNEL (7)         // 自适应阈值半矩形大小 参考值：7
-#define TRI_HALF_KERNEL (12)    // 三角滤波半卷积核大小，参考值：12
-#define TP_HALF_KERNEL (2)      // 角点参考点范围一半，参考值：2
-#define CLIP_VALUE (2)          // 自适应阈值clip参数
-#define RESAMPLE_DIS (3.0f)     // 重采样间距，参考：3.0
-#define ANG_KERNAL (6)          // 角度获取半卷积核，参考：6
-#define LOSS_THRES (3)          // 认为丢线时，左右边点距边距离
-#define TRACK_KERNEL (3)        // 寻找当前点法相值前后参考点范围
-#define TRACK_DIS (12)          // 路宽一半（像素）
-#define LOW_SAMPLE_ACTIVATE (6) // 某侧可用点数少于此时，激活缺少可用数据点判断方法
+#define BEGIN_X 40            // 扫描起始横向偏移（左右搜索半宽），参考值：40
+#define BEGIN_Y 180           // 近处检测行（靠近图像底部），参考值：180
+#define BEGIN_FAR_Y 60        // 远处检测行（靠近图像上方），参考值：60
+#define HALF_KERNEL 7         // 自适应阈值半矩形大小，参考值：7
+#define TRI_HALF_KERNEL 12    // 三角滤波半卷积核大小，参考值：12
+#define TP_HALF_KERNEL 2      // 角点参考点范围一半，参考值：2
+#define CLIP_VALUE 2          // 自适应阈值clip参数，参考值：2
+#define RESAMPLE_DIS 2.8f     // 重采样间距（像素），参考值：2.8
+#define ANG_KERNAL 6          // 角度获取半卷积核，参考值：6
+#define LOSS_THRES 3          // 认为丢线时的边界映射阈值（像素），参考值：3
+#define TRACK_KERNEL 6        // 寻找当前点法相值前后参考点范围（近似 ANG_KERNAL）
+#define TRACK_DIS 8           // 路宽一半（像素，重映射后），参考值：8
+#define LOW_SAMPLE_ACTIVATE 8 // 低采样激活阈值（点数少于此值时启用降阈值策略）
 // V 对应锐角，L 对应直角，J 对应曲线
-#define ANGV_THRES (20.0f * PI / 180.0f)                // 锐角角点最小角度阈值（弧度）
-#define ANGL_MIN_THRES (40.0f * PI / 180.0f)            // 直角角点最小角度阈值
-#define ANGL_MIN_THRES_LOW_SAMPLE (30.0f * PI / 180.0f) // 当采样点较少时，适当减少阈值
-#define ANGL_MAX_THRES (120.0f * PI / 180.0f)           // 直角角点最大角度阈值
-#define CURVE_THRES (0.15f)                             // 曲率阈值（经验值）
-#define BW_JUMP_THRES (18)                              // 斑马线黑白跳变数量阈值
-#define BW_Y (55)                                       // 检查斑马线纵坐标
-#define BW_Y2 (70)                                      // 检查斑马线纵坐标2
+#define ANGV_THRES 1.20f                // 锐角角点最小角度阈值（弧度，≈69°）
+#define ANGL_MIN_THRES 0.60f            // 直角角点最小角度阈值（弧度，≈34°）
+#define ANGL_MIN_THRES_LOW_SAMPLE 0.45f // 低采样时放宽直角阈值（弧度）
+#define ANGL_MAX_THRES 2.20f            // 直角角点最大角度阈值（弧度，≈126°）
+#define CURVE_THRES 0.30f               // 曲线阈值（弧度，≈17°）
+#define BW_JUMP_THRES 40                // 斑马线黑白跳变计数阈值（越大越不敏感）
+#define BW_Y 150                        // 第一条斑马线检测纵坐标（像素）
+#define BW_Y2 170                       // 第二条斑马线检测纵坐标（像素）
 
 #define KERNEL_SIZE (((HALF_KERNEL) * 2 + 1) * ((HALF_KERNEL) * 2 + 1))
 #define XMAX MAXX // 防止写错，可以与MAXX混用，不推荐使用（
