@@ -47,6 +47,7 @@
 #include "board.h"
 #include "motor.h"
 #include "camera.h"
+#include "zf_device_ips114.h"
 #include "wireless.h"
 #include "control.h"
 #include "status.h"
@@ -62,6 +63,23 @@ UTimeStamp clock=0;                 // 基于主定时器的时间戳
 
 uint8 curAltMot=0;
 SpeedValue curSpeed={0,0};          // 当前速度，二元浮点对
+
+// helper: convert 8-bit RGB to RGB565
+static inline uint16_t rgb565_from_rgb(uint8_t r, uint8_t g, uint8_t b)
+{
+    return (uint16_t)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
+}
+
+// helper: convert 8-bit gray to RGB565
+static inline uint16_t rgb565_from_gray(uint8_t g)
+{
+    return rgb565_from_rgb(g, g, g);
+}
+
+// clip helper (macro used in camera code)
+#ifndef clip
+#define clip(x, minn, maxn) ((x) < (minn) ? (minn) : ((x) > (maxn) ? (maxn) : (x)))
+#endif
 
 int core0_main(void){
     // 这两行初始化在任何项目中请都保留
@@ -82,11 +100,113 @@ int core0_main(void){
 #endif
     cpu_wait_event_ready();         // 等待所有核心初始化完毕
 
-    // 初始化部分结束，开始主循环
+    // 初始化屏幕与摄像头
+
+    ips114_show_string(0, 0, "camera init.");
+
+    // 初始化摄像头驱动（底层驱动可能会在内部进行重试）
+    while (1)
+    {
+        if (mt9v03x_init())
+            ips114_show_string(0, 16, "mt9v03x reinit.");
+        else
+            break;
+        system_delay_ms(500);
+    }
+    ips114_show_string(0, 16, "init success.");
+
+    // 初始化摄像头的高级处理模块
+    initCamera();
+
+
+
+    // 初始化部分结束，开始主循环（加入图像显示）
     while(TRUE){
-        // 本代码核 0 放硬件控制，核 1 放图像处理，所以这里是空的很正常
-        // 你也可以在这里放针对特定情况改 kp,ki,kd 的代码，随你
-        <代码挖空自己补不补随意>
+        if (mt9v03x_finish_flag)
+        {
+            uint16_t dis_w = ips114_width_max;
+            uint16_t half_h = ips114_height_max / 2;
+
+#if DISPLAY_MODE == 0
+            // 原图全屏显示
+            ips114_show_gray_image(0, 0, (const uint8 *)mt9v03x_image, MT9V03X_W, MT9V03X_H, dis_w, ips114_height_max, 0);
+            mt9v03x_finish_flag = 0;
+
+#elif DISPLAY_MODE == 1
+            // 仅显示处理后全图
+            imageProcess(); // 图像处理/二值化/巡线
+            uint8_t *proc = genOutput();
+            static uint16_t rgbBuf[MT9V03X_W * MT9V03X_H];
+            for (int y = 0; y < MT9V03X_H; y++)
+            {
+                for (int x = 0; x < MT9V03X_W; x++)
+                {
+                    uint8_t g = proc[y * MT9V03X_W + x];
+                    rgbBuf[y * MT9V03X_W + x] = rgb565_from_gray(g);
+                }
+            }
+            // 标记左右边界与轨迹
+            for (int i = 0; i < (int)lptsN; i++)
+            {
+                int px = (int)clip((int)borderLPts[0][i], 0, MT9V03X_W - 1);
+                int py = (int)clip((int)borderLPts[1][i], 0, MT9V03X_H - 1);
+                rgbBuf[py * MT9V03X_W + px] = rgb565_from_rgb(0, 255, 0);
+            }
+            for (int i = 0; i < (int)rptsN; i++)
+            {
+                int px = (int)clip((int)borderRPts[0][i], 0, MT9V03X_W - 1);
+                int py = (int)clip((int)borderRPts[1][i], 0, MT9V03X_H - 1);
+                rgbBuf[py * MT9V03X_W + px] = rgb565_from_rgb(0, 0, 255);
+            }
+            for (int i = 0; i < (int)tptsN; i++)
+            {
+                int px = (int)clip((int)trackPts[0][i], 0, MT9V03X_W - 1);
+                int py = (int)clip((int)trackPts[1][i], 0, MT9V03X_H - 1);
+                rgbBuf[py * MT9V03X_W + px] = rgb565_from_rgb(255, 0, 0);
+            }
+            ips114_show_rgb565_image(0, 0, (const uint16 *)rgbBuf, MT9V03X_W, MT9V03X_H, dis_w, ips114_height_max, 1);
+            mt9v03x_finish_flag = 0;
+
+#else
+            // 默认：上半屏显示原图，下半屏显示处理结果（带标记）
+            ips114_show_gray_image(0, 0, (const uint8 *)mt9v03x_image, MT9V03X_W, MT9V03X_H, dis_w, half_h, 0);
+
+            imageProcess(); // 图像处理/二值化/巡线
+            uint8_t *proc = genOutput();
+            static uint16_t rgbBuf[MT9V03X_W * MT9V03X_H];
+            for (int y = 0; y < MT9V03X_H; y++)
+            {
+                for (int x = 0; x < MT9V03X_W; x++)
+                {
+                    uint8_t g = proc[y * MT9V03X_W + x];
+                    rgbBuf[y * MT9V03X_W + x] = rgb565_from_gray(g);
+                }
+            }
+            for (int i = 0; i < (int)lptsN; i++)
+            {
+                int px = (int)clip((int)borderLPts[0][i], 0, MT9V03X_W - 1);
+                int py = (int)clip((int)borderLPts[1][i], 0, MT9V03X_H - 1);
+                rgbBuf[py * MT9V03X_W + px] = rgb565_from_rgb(0, 255, 0);
+            }
+            for (int i = 0; i < (int)rptsN; i++)
+            {
+                int px = (int)clip((int)borderRPts[0][i], 0, MT9V03X_W - 1);
+                int py = (int)clip((int)borderRPts[1][i], 0, MT9V03X_H - 1);
+                rgbBuf[py * MT9V03X_W + px] = rgb565_from_rgb(0, 0, 255);
+            }
+            for (int i = 0; i < (int)tptsN; i++)
+            {
+                int px = (int)clip((int)trackPts[0][i], 0, MT9V03X_W - 1);
+                int py = (int)clip((int)trackPts[1][i], 0, MT9V03X_H - 1);
+                rgbBuf[py * MT9V03X_W + px] = rgb565_from_rgb(255, 0, 0);
+            }
+            ips114_show_rgb565_image(0, half_h, (const uint16 *)rgbBuf, MT9V03X_W, MT9V03X_H, dis_w, half_h, 1);
+
+            mt9v03x_finish_flag = 0;
+#endif
+        }
+
+        // 其余控制逻辑继续由中断处理，主循环可保持短延时
         system_delay_ms(1);
     }
 }
