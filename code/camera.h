@@ -28,15 +28,9 @@
 
 #define MAXX MT9V03X_W
 #define MAXY MT9V03X_H
-<<<<<<< HEAD
-#define BEGIN_X (18)            // 扫描起始坐标（略大于 0 的数）
-#define BEGIN_Y (48)            // 近处水平线纵坐标
-#define BEGIN_FAR_Y (20)        // 远处水平线纵坐标
-=======
 #define BEGIN_X (23)            // 扫描起始坐标（略大于 0 的数）
 #define BEGIN_Y (110)           // 近处水平线纵坐标
 #define BEGIN_FAR_Y (60)        // 远处水平线纵坐标
->>>>>>> dbf3f4c (淇敼閮ㄥ垎camera.h鍙傛暟)
 #define HALF_KERNEL (7)         // 自适应阈值半矩形大小 参考值：7
 #define TRI_HALF_KERNEL (12)    // 三角滤波半卷积核大小，参考值：12
 #define TP_HALF_KERNEL (2)      // 角点参考点范围一半，参考值：2
