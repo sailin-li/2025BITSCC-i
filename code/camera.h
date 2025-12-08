@@ -28,18 +28,24 @@
 
 #define MAXX MT9V03X_W
 #define MAXY MT9V03X_H
+<<<<<<< HEAD
 #define BEGIN_X (18)            // 扫描起始坐标（略大于 0 的数）
 #define BEGIN_Y (48)            // 近处水平线纵坐标
 #define BEGIN_FAR_Y (20)        // 远处水平线纵坐标
+=======
+#define BEGIN_X (23)            // 扫描起始坐标（略大于 0 的数）
+#define BEGIN_Y (110)           // 近处水平线纵坐标
+#define BEGIN_FAR_Y (60)        // 远处水平线纵坐标
+>>>>>>> dbf3f4c (淇敼閮ㄥ垎camera.h鍙傛暟)
 #define HALF_KERNEL (7)         // 自适应阈值半矩形大小 参考值：7
 #define TRI_HALF_KERNEL (12)    // 三角滤波半卷积核大小，参考值：12
 #define TP_HALF_KERNEL (2)      // 角点参考点范围一半，参考值：2
 #define CLIP_VALUE (2)          // 自适应阈值clip参数
 #define RESAMPLE_DIS (3.0f)     // 重采样间距，参考：3.0
 #define ANG_KERNAL (6)          // 角度获取半卷积核，参考：6
-#define LOSS_THRES (3)          // 认为丢线时，左右边点距边距离
-#define TRACK_KERNEL (3)        // 寻找当前点法相值前后参考点范围
-#define TRACK_DIS (12)          // 路宽一半（像素）
+#define LOSS_THRES (3)          // 认为丢线时，左右边点距边距离？？？？
+#define TRACK_KERNEL (6)        // 寻找当前点法相值前后参考点范围
+#define TRACK_DIS (22)          // 路宽一半（像素）
 #define LOW_SAMPLE_ACTIVATE (6) // 某侧可用点数少于此时，激活缺少可用数据点判断方法
 // V 对应锐角，L 对应直角，J 对应曲线
 #define ANGV_THRES (20.0f * PI / 180.0f)                // 锐角角点最小角度阈值（弧度）
