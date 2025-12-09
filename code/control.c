@@ -93,20 +93,20 @@ inline uint8 rampDetectDown()
 }
 
 // 这些东西应该放到头文件里去……，不过为了调试逻辑方便放在这里也未尝不可，用到啥就用啥
-uint16 cirReady = 0;
-uint8 rampFlag = 0;
-float CURVE_DEFAULT = 6.0f;
-float STRAIGHT_DEFAULT = 9.0f;
-float CIR_RUN_DEFAULT = 7.0f;
-#define CROSS_SPEED (5.0f)
-#define CROSS_MID_SPEED (3.0f)
-#define UP_RAMP_SPEED (8.0f)
-#define RAMP_SPEED (6.0f)
-#define DOWN_RAMP_SPEED (4.0f)
-#define CIR_SPEED (7.0f)
-#define CURVE_LATER (0.5f)
-#define STRAIGHT_LATER (1.0f)
-#define CIRCLE_LATER (0.8f)
+uint16 cirReady = 0;   // 圆环准备状态
+uint8 rampFlag = 0;   // 坡道标志
+float CURVE_DEFAULT = 6.0f;   // 曲线默认速度
+float STRAIGHT_DEFAULT = 9.0f;  // 直线默认速度
+float CIR_RUN_DEFAULT = 7.0f;   // 圆环运行默认速度（备用值，实际代码中未直接使用）
+#define CROSS_SPEED (5.0f)   // 十字路口外速度
+#define CROSS_MID_SPEED (3.0f)  // 十字路口中间速度
+#define UP_RAMP_SPEED (8.0f)  // 上坡速度
+#define RAMP_SPEED (6.0f)   // 坡上速度
+#define DOWN_RAMP_SPEED (4.0f)   // 下坡速度
+#define CIR_SPEED (7.0f)    // 圆环速度
+#define CURVE_LATER (0.5f) // 曲线预瞄系数
+#define STRAIGHT_LATER (1.0f) // 直线预瞄系数
+#define CIRCLE_LATER (0.8f)   // 圆环预瞄系数
 
 void updState()
 {
