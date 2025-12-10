@@ -69,12 +69,12 @@ int core0_main(void)
     clock_init(); // 获取时钟频率<务必保留>
     debug_init(); // 初始化默认调试串口
     // 此处编写用户代码 例如外设初始化代码等
-    initBuzzer();                                 // 初始化蜂鸣器（调试用）
-    initBoard();                                  // 初始化板卡LED灯，按钮与开关、
-    initEncoder();                                // 初始化编码器（获取速度）
-    initMotor(clock);                             // 初始化马达
-    initServo(clock);                             // 初始化舵机
-                                                  //    initWireless();                 // 初始化无线模块，通过LED2灯汇报进度，实际比赛时禁止使用！
+    initBuzzer();     // 初始化蜂鸣器（调试用）
+    initBoard();      // 初始化板卡LED灯，按钮与开关、
+    initEncoder();    // 初始化编码器（获取速度）
+    initMotor(clock); // 初始化马达
+    initServo(clock); // 初始化舵机
+    // initWireless();                               // 初始化无线模块，通过LED2灯汇报进度，实际比赛时禁止使用！
     pit_us_init(CCU60_CH0, SAMPLE_PERIOD * 1000); // 使用中断初始化定时器 0.1s
 #ifdef USE_IPS114_SCREEN
     ips114_set_dir(IPS114_PORTAIT);
