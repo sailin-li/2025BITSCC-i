@@ -91,6 +91,7 @@ void getTrackLine(void);                                            // »ñÈ¡ÒªÑ²µ
 void getTrackLineViaPointAndAngle(FPos angle, FPos x0, FPos y0);    // Í¨¹ı×ø±êÓë½Ç¶ÈÖ±½Ó¹Ì¶¨ÒªÑ²µÄÄ¿±êÏß
 void getTrackMethod(void);                                          // ¸ù¾İĞèÒªÑ¡ÔñºÏÊÊµÄ»ñÈ¡Ä¿±êÏßµÄ·½·¨
 uint8 *genOutput(void);                                             // ²úÉú»æÖÆÁË×óÓÒ±ßÏß¹Ø¼üµãµÄÍ¼Ïñ£¬·µ»ØÍ¼Ïñ
+uint8 *genBinaryWithMarks(void);                                    // ²úÉú¶şÖµ»¯Í¼Ïñ²¢±ê¼Ç×óÓÒ±ßÏß¹Ø¼üµã
 uint8 lGoesOut(void);                                               // ×ó±ßÏßÊÇ·ñÏò×ó²à³¬³öÆÁÄ»
 uint8 rGoesOut(void);                                               // ÓÒ±ßÏßÊÇ·ñÏòÓÒ²à³¬³öÆÁÄ»
 

@@ -597,6 +597,44 @@ void getTrackLineViaPointAndAngle(FPos angle, FPos x0, FPos y0)
         trackPts[1][i] = y0 - i * sin(angle) * RESAMPLE_DIS;
     }
 }
+// 产生二值化图像并标记左右边线关键点
+uint8 *genBinaryWithMarks()
+{ // 生成二值化图像，并用白点标记左右边线、黑点标记轨迹线
+    // 重新计算阈值
+    UPix thresh = getThres();
+
+    // 生成二值化图像：黑点（≤阈值）为0，白点（>阈值）为255
+    for (UPos y = 0; y < MAXY; y++)
+    {
+        for (UPos x = 0; x < MAXX; x++)
+        {
+            UPix pixel = getPixel(x, y);
+            outImg[y][x] = (pixel <= thresh) ? 0 : 255;
+        }
+    }
+
+    // 标记左边线点（白色 255）
+    for (int i = 0; i < lptsN; i++)
+    {
+        outImg[(int)clip(borderLPts[1][i], 0, MAXY - 1)][(int)clip(borderLPts[0][i], 0, MAXX - 1)] = 255;
+        outImg[(int)clip(borderLPts[1][i] - 1, 0, MAXY - 1)][(int)clip(borderLPts[0][i], 0, MAXX - 1)] = 255;
+        outImg[(int)clip(borderLPts[1][i] + 1, 0, MAXY - 1)][(int)clip(borderLPts[0][i], 0, MAXX - 1)] = 255;
+        outImg[(int)clip(borderLPts[1][i], 0, MAXY - 1)][(int)clip(borderLPts[0][i] - 1, 0, MAXX - 1)] = 255;
+        outImg[(int)clip(borderLPts[1][i], 0, MAXY - 1)][(int)clip(borderLPts[0][i] + 1, 0, MAXX - 1)] = 255;
+    }
+
+    // 标记右边线点（白色 255）
+    for (int i = 0; i < rptsN; i++)
+    {
+        outImg[(int)clip(borderRPts[1][i], 0, MAXY - 1)][(int)clip(borderRPts[0][i], 0, MAXX - 1)] = 255;
+        outImg[(int)clip(borderRPts[1][i] - 1, 0, MAXY - 1)][(int)clip(borderRPts[0][i], 0, MAXX - 1)] = 255;
+        outImg[(int)clip(borderRPts[1][i] + 1, 0, MAXY - 1)][(int)clip(borderRPts[0][i], 0, MAXX - 1)] = 255;
+        outImg[(int)clip(borderRPts[1][i], 0, MAXY - 1)][(int)clip(borderRPts[0][i] - 1, 0, MAXX - 1)] = 255;
+        outImg[(int)clip(borderRPts[1][i], 0, MAXY - 1)][(int)clip(borderRPts[0][i] + 1, 0, MAXX - 1)] = 255;
+    }
+
+    return (uint8 *)outImg;
+}
 // 产生绘制了左右边线关键点的图像，返回图像
 uint8 *genOutput()
 { // 调试的时候，可以用它生成一幅标记左右点的图像
