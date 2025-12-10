@@ -365,13 +365,13 @@ void imageProcess()
 {
     //    while(cameraProcessFlag==TRUE);
     //    cameraProcessFlag=TRUE;
-    // 从近处左右寻黑白跳变点
+    // 从近处左右寻白黑跳变点（白色赛道+黑色外部）
     UPos xl = MAXX / 2 - BEGIN_X, xr = MAXX / 2 + BEGIN_X, y0 = BEGIN_Y;
     for (; xl > 0; xl--)
-        if (getPixel(xl, y0) <= THRES)
+        if (getPixel(xl, y0) >= THRES) // 寻找白色点（赛道）
             break;
     for (; xr < MAXX - 1; xr++)
-        if (getPixel(xr, y0) <= THRES)
+        if (getPixel(xr, y0) >= THRES) // 寻找白色点（赛道）
             break;
     lostStatus = 0;
     if (INV_PLOT[y0][xl][0] < LOSS_THRES)
@@ -430,10 +430,10 @@ void imageProcess()
         xl = xMid - BEGIN_X;
         xr = xMid + BEGIN_X;
         for (; xl > 0; xl--)
-            if (getPixel(xl, y0) <= THRES)
+            if (getPixel(xl, y0) >= THRES) // 寻找白色点（赛道）
                 break;
         for (; xr < MAXX - 1; xr++)
-            if (getPixel(xr, y0) <= THRES)
+            if (getPixel(xr, y0) >= THRES) // 寻找白色点（赛道）
                 break;
         if (((INV_PLOT[y0][xl][0] < LOSS_THRES && INV_PLOT[y0][xr][0] > MAXX - 1 - LOSS_THRES) || ((xr - xl) > 48 && (genAngle < 2 * PI / 5 || genAngle > 3 * PI / 5))) && curState == GoCross)
         {
