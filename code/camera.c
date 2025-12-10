@@ -120,183 +120,106 @@ static const SPos dirFrontLeft[4][2] = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};  //
 static const SPos dirFrontRight[4][2] = {{1, -1}, {1, 1}, {-1, 1}, {-1, -1}}; // {x,y}
 #define clip(x, minn, maxn) ((x) < (minn) ? (minn) : ((x) > (maxn) ? (maxn) : (x)))
 
-// 左手迷宫巡线（沿着黑线左侧走）
-// 方向定义：0=上(0,-1), 1=右(1,0), 2=下(0,1), 3=左(-1,0)
-// 左手法则：依次检查 左前 -> 前 -> 右前 -> 右 -> 右下...
+// 寻找左边线
 void findBorderLineL(UPos x, UPos y)
-{
-    // 前进方向：0=上, 1=右, 2=下, 3=左
-    static const SPos dirFront[4][2] = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
-    // 左侧方向（相对于前进方向逆时针90度）
-    static const SPos dirLeft[4][2] = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
-
+{ // 寻左边
+#define setNewPoint           \
+    borderLPts[0][lptsN] = x; \
+    borderLPts[1][lptsN] = y; \
+    lptsN++
+#define UDir uint8
+    UDir nxt = 0, turn = 0;
     lptsN = 0;
-    if (!pointIsValid(x, y))
-        return;
-
-    borderLPts[0][lptsN] = x;
-    borderLPts[1][lptsN] = y;
-    lptsN++;
-
-    int dir = 0; // 初始向下(方向2)
-    dir = 2;
-    int turn = 0; // 连续转向计数
-
+    setNewPoint;
     while (lptsN < MAXX + MAXY && turn < 4 && pointIsValid(x + 3, y) && pointIsValid(x - 3, y - 3))
     {
-        // 左手法则：先检查左侧（左前），再检查前方，再右侧
-        // 对于左侧巡线，优先级：左 -> 左前 -> 前 -> 右前 -> 右
-
-        SPos nextX = (SPos)x, nextY = (SPos)y;
+        // 迷宫法巡线
+        // 左侧优先：先检索左上、上、右上、左、右、左下、下、右下
+        const SPos leftOrder[8][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}};
         uint8 found = FALSE;
-
-        // 优先检查左侧
-        int leftDir = (dir + 3) % 4; // 左转
-        SPos lx = (SPos)x + dirFront[leftDir][0];
-        SPos ly = (SPos)y + dirFront[leftDir][1];
-        if (pointIsValid(lx, ly) && getPixel((UPos)lx, (UPos)ly) <= THRES)
+        for (int k = 0; k < 8; k++)
         {
-            nextX = lx;
-            nextY = ly;
-            dir = leftDir;
-            found = TRUE;
-            turn = 0;
-        }
-
-        // 如果左侧没有黑点，检查前方
-        if (!found)
-        {
-            SPos fx = (SPos)x + dirFront[dir][0];
-            SPos fy = (SPos)y + dirFront[dir][1];
-            if (pointIsValid(fx, fy) && getPixel((UPos)fx, (UPos)fy) <= THRES)
+            SPos nx = (SPos)x + leftOrder[k][0];
+            SPos ny = (SPos)y + leftOrder[k][1];
+            if (!pointIsValid(nx, ny))
+                continue;
+            if (getPixel((UPos)nx, (UPos)ny) >= THRES)
             {
-                nextX = fx;
-                nextY = fy;
+                x = (UPos)nx;
+                y = (UPos)ny;
+                setNewPoint;
                 found = TRUE;
                 turn = 0;
+                break;
             }
         }
-
-        // 如果前方也没有，检查右侧
         if (!found)
         {
-            int rightDir = (dir + 1) % 4; // 右转
-            SPos rx = (SPos)x + dirFront[rightDir][0];
-            SPos ry = (SPos)y + dirFront[rightDir][1];
-            if (pointIsValid(rx, ry) && getPixel((UPos)rx, (UPos)ry) <= THRES)
+            // 没找到合适的黑点，尝试向下搜索一小段距离作为容错
+            if (pointIsValid(x, y + 1) && getPixel(x, y + 1) >= THRES)
             {
-                nextX = rx;
-                nextY = ry;
-                dir = rightDir;
-                found = TRUE;
+                y = y + 1;
+                setNewPoint;
                 turn = 0;
             }
-        }
-
-        // 都没找到，转向或停止
-        if (!found)
-        {
-            dir = (dir + 1) % 4; // 右转（转向）
-            turn++;
-        }
-        else
-        {
-            x = (UPos)nextX;
-            y = (UPos)nextY;
-            borderLPts[0][lptsN] = x;
-            borderLPts[1][lptsN] = y;
-            lptsN++;
+            else
+            {
+                turn++;
+            }
         }
     }
+#undef UDir
+#undef setNewPoint
 }
-// 右手迷宫巡线（沿着黑线右侧走）
-// 方向定义：0=上(0,-1), 1=右(1,0), 2=下(0,1), 3=左(-1,0)
-// 右手法则：依次检查 右前 -> 前 -> 左前 -> 左 -> 左下...
+// 寻找右边线
 void findBorderLineR(UPos x, UPos y)
-{
-    // 前进方向：0=上, 1=右, 2=下, 3=左
-    static const SPos dirFront[4][2] = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
-    // 右侧方向（相对于前进方向顺时针90度）
-    static const SPos dirRight[4][2] = {{1, -1}, {1, 1}, {-1, 1}, {-1, -1}};
-
+{ // 寻右边
+#define setNewPoint           \
+    borderRPts[0][rptsN] = x; \
+    borderRPts[1][rptsN] = y; \
+    rptsN++
+#define UDir uint8
+    UDir nxt = 0, turn = 0;
     rptsN = 0;
-    if (!pointIsValid(x, y))
-        return;
-
-    borderRPts[0][rptsN] = x;
-    borderRPts[1][rptsN] = y;
-    rptsN++;
-
-    int dir = 0; // 初始向下(方向2)
-    dir = 2;
-    int turn = 0; // 连续转向计数
-
+    setNewPoint;
     while (rptsN < MAXX + MAXY && turn < 4 && pointIsValid(x + 3, y) && pointIsValid(x - 3, y - 3))
     {
-        // 右手法则：先检查右侧（右前），再检查前方，再左侧
-        // 对于右侧巡线，优先级：右 -> 右前 -> 前 -> 左前 -> 左
-
-        SPos nextX = (SPos)x, nextY = (SPos)y;
+        // 迷宫法巡线
+        // 右侧优先：先检索右上、上、左上、右、左、右下、下、左下
+        const SPos rightOrder[8][2] = {{1, -1}, {0, -1}, {-1, -1}, {1, 0}, {-1, 0}, {1, 1}, {0, 1}, {-1, 1}};
         uint8 found = FALSE;
-
-        // 优先检查右侧
-        int rightDir = (dir + 1) % 4; // 右转
-        SPos rx = (SPos)x + dirFront[rightDir][0];
-        SPos ry = (SPos)y + dirFront[rightDir][1];
-        if (pointIsValid(rx, ry) && getPixel((UPos)rx, (UPos)ry) <= THRES)
+        for (int k = 0; k < 8; k++)
         {
-            nextX = rx;
-            nextY = ry;
-            dir = rightDir;
-            found = TRUE;
-            turn = 0;
-        }
-
-        // 如果右侧没有黑点，检查前方
-        if (!found)
-        {
-            SPos fx = (SPos)x + dirFront[dir][0];
-            SPos fy = (SPos)y + dirFront[dir][1];
-            if (pointIsValid(fx, fy) && getPixel((UPos)fx, (UPos)fy) <= THRES)
+            SPos nx = (SPos)x + rightOrder[k][0];
+            SPos ny = (SPos)y + rightOrder[k][1];
+            if (!pointIsValid(nx, ny))
+                continue;
+            if (getPixel((UPos)nx, (UPos)ny) >= THRES)
             {
-                nextX = fx;
-                nextY = fy;
+                x = (UPos)nx;
+                y = (UPos)ny;
+                setNewPoint;
                 found = TRUE;
                 turn = 0;
+                break;
             }
         }
-
-        // 如果前方也没有，检查左侧
         if (!found)
         {
-            int leftDir = (dir + 3) % 4; // 左转
-            SPos lx = (SPos)x + dirFront[leftDir][0];
-            SPos ly = (SPos)y + dirFront[leftDir][1];
-            if (pointIsValid(lx, ly) && getPixel((UPos)lx, (UPos)ly) <= THRES)
+            if (pointIsValid(x, y + 1) && getPixel(x, y + 1) >= THRES)
             {
-                nextX = lx;
-                nextY = ly;
-                dir = leftDir;
-                found = TRUE;
+                y = y + 1;
+                setNewPoint;
                 turn = 0;
             }
-        }
-
-        // 都没找到，转向或停止
-        if (!found)
-        {
-            dir = (dir + 3) % 4; // 左转（转向）
-            turn++;
-        }
-        else
-        {
-            x = (UPos)nextX;
-            y = (UPos)nextY;
-            borderRPts[0][rptsN] = x;
-            borderRPts[1][rptsN] = y;
-            rptsN++;
+            else
+            {
+                turn++;
+            }
         }
     }
+#undef UDir
+#undef setNewPoint
 }
 // 三角滤波边线
 void triFiltering(UDPos ptsN, FPos *borderPts)

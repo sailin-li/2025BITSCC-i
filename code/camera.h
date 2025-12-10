@@ -28,7 +28,7 @@
 
 #define MAXX MT9V03X_W
 #define MAXY MT9V03X_H
-#define BEGIN_X (22)            // 扫描起始坐标（略大于 0 的数）
+#define BEGIN_X (20)            // 扫描起始坐标（略大于 0 的数）
 #define BEGIN_Y (110)           // 近处水平线纵坐标
 #define BEGIN_FAR_Y (60)        // 远处水平线纵坐标
 #define HALF_KERNEL (7)         // 自适应阈值半矩形大小 参考值：7

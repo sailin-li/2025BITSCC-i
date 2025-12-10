@@ -69,7 +69,7 @@ void core1_main(void)
         { // 摄像头采集完成
             // 定时大津法获取阈值，也许你有更好的方法
             if ((++COUNTER) == 50)
-                THRES = getThres(), COUNTER = 0;
+                updateThres(), COUNTER = 0;
             // 图像处理主函数
             imageProcess(); // in camera.c
             // 更新控制状态
