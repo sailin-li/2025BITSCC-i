@@ -78,11 +78,11 @@ void core1_main(void)
             getTrackMethod(); // in camera.c
             // 更新控制值
             updCtrlVal(); // in control.c
-                          // === 在屏幕上显示二值化+标记的图像（调试用）===
-#ifdef USE_IPS114_SCREEN
-            uint8 *binary_marked = genBinaryWithMarks();
-            ips114_displayimage03x((const uint8 *)binary_marked, MAXX, MAXY);
-#endif
+
+            // === 在屏幕上显示标记左右边线的图像（调试用）===
+            uint8 *out = genOutput();
+            ips114_displayimage03x((const uint8 *)out, MAXX, MAXY);
+
             finishFlag = TRUE;
             mt9v03x_finish_flag = 0;
         }
