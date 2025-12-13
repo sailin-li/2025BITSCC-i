@@ -18,6 +18,7 @@ IFX_ALIGN(4)
 UPix outImg[MAXY][MAXX];
 FAng genAngle = 0;
 TrackState trackState = TrackLeft;
+uint8 USE_LOCAL_THRES = 0; // 是否使用局部自适应阈值：1=是，0=否
 void initCamera()
 {
     while (1)
@@ -115,6 +116,83 @@ UPix getThres()
     return thres;
 }
 inline UPix updateThres() { return THRES = getThres(); }
+
+// 局部自适应阈值：计算以(x, y)为中心的矩形区域内的平均值与标准差
+// 返回值为：平均值 + CLIP_VALUE * 标准差
+// 用于处理光线不均匀的情况
+UPix getLocalThres(UPos x, UPos y)
+{
+    int K = HALF_KERNEL; // 半卷积核大小
+
+    // 确保不超出边界
+    SPos x_start = (SPos)x - K;
+    SPos x_end = (SPos)x + K;
+    SPos y_start = (SPos)y - K;
+    SPos y_end = (SPos)y + K;
+
+    if (x_start < 0)
+        x_start = 0;
+    if (x_end >= MAXX)
+        x_end = MAXX - 1;
+    if (y_start < 0)
+        y_start = 0;
+    if (y_end >= MAXY)
+        y_end = MAXY - 1;
+
+    // 计算区域内的像素值和与平方和
+    uint32_t sum = 0;
+    uint32_t sum_sq = 0;
+    int pixel_count = 0;
+
+    for (SPos py = y_start; py <= y_end; py++)
+    {
+        for (SPos px = x_start; px <= x_end; px++)
+        {
+            UPix pix = getPixelOrigin((UPos)px, (UPos)py);
+            sum += pix;
+            sum_sq += pix * pix;
+            pixel_count++;
+        }
+    }
+
+    // 计算平均值
+    double mean = (double)sum / pixel_count;
+
+    // 计算标准差
+    double variance = ((double)sum_sq / pixel_count) - (mean * mean);
+    if (variance < 0)
+        variance = 0; // 防止浮点误差
+    double std_dev = sqrt(variance);
+
+    // 返回：平均值 + CLIP_VALUE * 标准差
+    UPix local_thres = (UPix)(mean + CLIP_VALUE * std_dev);
+    return local_thres;
+}
+
+// 通过逆透视后的坐标计算局部阈值
+UPix getLocalThresFromWarped(UPos x, UPos y)
+{
+    // 先转换到原始图像坐标
+    UPos u = INV_PLOT[y][x][0];
+    UPos v = INV_PLOT[y][x][1];
+    return getLocalThres(u, v);
+}
+
+// 获取混合阈值：根据USE_LOCAL_THRES开关决定使用局部或全局阈值
+inline UPix getMixedThres(UPos x, UPos y)
+{
+    if (USE_LOCAL_THRES)
+        return getLocalThresFromWarped(x, y);
+    else
+        return THRES;
+}
+
+// 设置是否使用局部阈值
+void setUseLocalThres(uint8 enable)
+{
+    USE_LOCAL_THRES = enable;
+}
+
 static const SPos dirFront[4][2] = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};        // {x,y}
 static const SPos dirFrontLeft[4][2] = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};  // {x,y}
 static const SPos dirFrontRight[4][2] = {{1, -1}, {1, 1}, {-1, 1}, {-1, -1}}; // {x,y}
@@ -143,7 +221,9 @@ void findBorderLineL(UPos x, UPos y)
             SPos ny = (SPos)y + leftOrder[k][1];
             if (!pointIsValid(nx, ny))
                 continue;
-            if (getPixel((UPos)nx, (UPos)ny) >= THRES)
+            UPix pix = getPixel((UPos)nx, (UPos)ny);
+            UPix thres = getMixedThres((UPos)nx, (UPos)ny); // 使用混合阈值
+            if (pix >= thres)                               // 寻找白色点（赛道）
             {
                 x = (UPos)nx;
                 y = (UPos)ny;
@@ -155,12 +235,21 @@ void findBorderLineL(UPos x, UPos y)
         }
         if (!found)
         {
-            // 没找到合适的黑点，尝试向下搜索一小段距离作为容错
-            if (pointIsValid(x, y + 1) && getPixel(x, y + 1) >= THRES)
+            // 没找到合适的点，尝试向下搜索一小段距离作为容错
+            if (pointIsValid(x, y + 1))
             {
-                y = y + 1;
-                setNewPoint;
-                turn = 0;
+                UPix pix = getPixel(x, y + 1);
+                UPix thres = getMixedThres(x, y + 1); // 使用混合阈值
+                if (pix >= thres)
+                {
+                    y = y + 1;
+                    setNewPoint;
+                    turn = 0;
+                }
+                else
+                {
+                    turn++;
+                }
             }
             else
             {
@@ -194,7 +283,9 @@ void findBorderLineR(UPos x, UPos y)
             SPos ny = (SPos)y + rightOrder[k][1];
             if (!pointIsValid(nx, ny))
                 continue;
-            if (getPixel((UPos)nx, (UPos)ny) >= THRES)
+            UPix pix = getPixel((UPos)nx, (UPos)ny);
+            UPix thres = getMixedThres((UPos)nx, (UPos)ny); // 使用混合阈值
+            if (pix >= thres)                               // 寻找白色点（赛道）
             {
                 x = (UPos)nx;
                 y = (UPos)ny;
@@ -206,11 +297,20 @@ void findBorderLineR(UPos x, UPos y)
         }
         if (!found)
         {
-            if (pointIsValid(x, y + 1) && getPixel(x, y + 1) >= THRES)
+            if (pointIsValid(x, y + 1))
             {
-                y = y + 1;
-                setNewPoint;
-                turn = 0;
+                UPix pix = getPixel(x, y + 1);
+                UPix thres = getMixedThres(x, y + 1); // 使用混合阈值
+                if (pix >= thres)
+                {
+                    y = y + 1;
+                    setNewPoint;
+                    turn = 0;
+                }
+                else
+                {
+                    turn++;
+                }
             }
             else
             {

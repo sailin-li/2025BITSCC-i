@@ -31,10 +31,10 @@
 #define BEGIN_X (20)            // É¨ÃèÆðÊ¼×ø±ê£¨ÂÔ´óÓÚ 0 µÄÊý£©
 #define BEGIN_Y (110)           // ½ü´¦Ë®Æ½Ïß×Ý×ø±ê
 #define BEGIN_FAR_Y (60)        // Ô¶´¦Ë®Æ½Ïß×Ý×ø±ê
-#define HALF_KERNEL (7)         // ×ÔÊÊÓ¦ãÐÖµ°ë¾ØÐÎ´óÐ¡ ²Î¿¼Öµ£º7
+#define HALF_KERNEL (5)         // ×ÔÊÊÓ¦ãÐÖµ°ë¾ØÐÎ´óÐ¡ ²Î¿¼Öµ£º7
 #define TRI_HALF_KERNEL (12)    // Èý½ÇÂË²¨°ë¾í»ýºË´óÐ¡£¬²Î¿¼Öµ£º12
 #define TP_HALF_KERNEL (2)      // ½Çµã²Î¿¼µã·¶Î§Ò»°ë£¬²Î¿¼Öµ£º2
-#define CLIP_VALUE (2)          // ×ÔÊÊÓ¦ãÐÖµclip²ÎÊý
+#define CLIP_VALUE (1)          // ×ÔÊÊÓ¦ãÐÖµclip²ÎÊý
 #define RESAMPLE_DIS (3.0f)     // ÖØ²ÉÑù¼ä¾à£¬²Î¿¼£º3.0
 #define ANG_KERNAL (6)          // ½Ç¶È»ñÈ¡°ë¾í»ýºË£¬²Î¿¼£º6
 #define LOSS_THRES (3)          // ÈÏÎª¶ªÏßÊ±£¬×óÓÒ±ßµã¾à±ß¾àÀë£¿£¿£¿£¿
@@ -64,6 +64,7 @@ typedef enum
 
 // È«¾Ö±äÁ¿
 extern UPix THRES;                                                  // È«¾Ö´óãÐÖµ
+extern uint8 USE_LOCAL_THRES;                                       // ÊÇ·ñÊ¹ÓÃ¾Ö²¿×ÔÊÊÓ¦ãÐÖµ
 extern const UPos INV_PLOT[MT9V03X_H][MT9V03X_W][2];                // ·´Í¶Ó°±ä»»´ò±í
 extern UPix outImg[MAXY][MAXX];                                     // Êä³öÍ¼Ïñ
 extern FPos trackPts[2][MAXX + MAXY];                               // ×óÄ¿±êµãÓëÓÒÄ¿±êµã
@@ -80,6 +81,10 @@ UPix getPixelOrigin(UPos x, UPos y);                                // »ñÈ¡Ô­Í¼Ö
 UPix getPixel(UPos x, UPos y);                                      // »ñÈ¡ÄæÍ¸ÊÓ±ä»»ºóÍ¼ÏñÖÐºá×ø±êÎª x ,×Ý×ø±êÎª y µã´¦µÄÏñËØÖµ
 UPix getThres(void);                                                // otsu ·¨»ñÈ¡Í¼ÏñãÐÖµ
 UPix updateThres(void);                                             // ¸üÐÂÍ¼ÏñãÐÖµ
+UPix getLocalThres(UPos x, UPos y);                                 // ¼ÆËãÖ¸¶¨Î»ÖÃµÄ¾Ö²¿×ÔÊÊÓ¦ãÐÖµ
+UPix getLocalThresFromWarped(UPos x, UPos y);                       // Í¨¹ýÄæÍ¸ÊÓ×ø±ê¼ÆËã¾Ö²¿×ÔÊÊÓ¦ãÐÖµ
+UPix getMixedThres(UPos x, UPos y);                                 // »ñÈ¡»ìºÏãÐÖµ£¨¸ù¾ÝUSE_LOCAL_THRES¿ª¹Ø£©
+void setUseLocalThres(uint8 enable);                                // ÉèÖÃÊÇ·ñÊ¹ÓÃ¾Ö²¿×ÔÊÊÓ¦ãÐÖµ
 void findBorderLineL(UPos x, UPos y);                               // Ñ°ÕÒ×ó±ßÏß
 void findBorderLineR(UPos x, UPos y);                               // Ñ°ÕÒÓÒ±ßÏß
 void triFiltering(UDPos ptsN, FPos *borderPts);                     // Èý½ÇÂË²¨±ßÏß

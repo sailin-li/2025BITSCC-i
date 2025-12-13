@@ -67,6 +67,8 @@ void core1_main(void)
     {
         if (mt9v03x_finish_flag)
         { // 摄像头采集完成
+            // 启用局部阈值
+            setUseLocalThres(1);
             // 定时大津法获取阈值，也许你有更好的方法
             if ((++COUNTER) == 50)
                 updateThres(), COUNTER = 0;
